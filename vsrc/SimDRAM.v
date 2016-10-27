@@ -1,0 +1,234 @@
+import "DPI-C" function chandle memory_init ();
+
+import "DPI-C" function void memory_tick
+(
+  input  chandle channel,
+
+  input  bit     ar_valid,
+  output bit     ar_ready,
+  input  int     ar_addr,
+  input  int     ar_id,
+  input  int     ar_size,
+  input  int     ar_len,
+
+  input  bit     aw_valid,
+  output bit     aw_ready,
+  input  int     aw_addr,
+  input  int     aw_id,
+  input  int     aw_size,
+  input  int     aw_len,
+
+  input  bit     w_valid,
+  output bit     w_ready,
+  input  int     w_strb,
+  input  longint w_data,
+  input  bit     w_last,
+
+  output bit     r_valid,
+  input  bit     r_ready,
+  output int     r_id,
+  output int     r_resp,
+  output longint r_data,
+  output bit     r_last,
+
+  output bit     b_valid,
+  input  bit     b_ready,
+  output int     b_id,
+  output int     b_resp
+);
+
+module SimDRAM (
+  input         clock,
+  input         reset,
+  output        axi_aw_ready,
+  input         axi_aw_valid,
+  input  [31:0] axi_aw_bits_addr,
+  input  [7:0]  axi_aw_bits_len,
+  input  [2:0]  axi_aw_bits_size,
+  input  [1:0]  axi_aw_bits_burst,
+  input         axi_aw_bits_lock,
+  input  [3:0]  axi_aw_bits_cache,
+  input  [2:0]  axi_aw_bits_prot,
+  input  [3:0]  axi_aw_bits_qos,
+  input  [3:0]  axi_aw_bits_region,
+  input  [4:0]  axi_aw_bits_id,
+  input         axi_aw_bits_user,
+  output        axi_w_ready,
+  input         axi_w_valid,
+  input  [63:0] axi_w_bits_data,
+  input         axi_w_bits_last,
+  input  [4:0]  axi_w_bits_id,
+  input  [7:0]  axi_w_bits_strb,
+  input         axi_w_bits_user,
+  input         axi_b_ready,
+  output        axi_b_valid,
+  output [1:0]  axi_b_bits_resp,
+  output [4:0]  axi_b_bits_id,
+  output        axi_b_bits_user,
+  output        axi_ar_ready,
+  input         axi_ar_valid,
+  input  [31:0] axi_ar_bits_addr,
+  input  [7:0]  axi_ar_bits_len,
+  input  [2:0]  axi_ar_bits_size,
+  input  [1:0]  axi_ar_bits_burst,
+  input         axi_ar_bits_lock,
+  input  [3:0]  axi_ar_bits_cache,
+  input  [2:0]  axi_ar_bits_prot,
+  input  [3:0]  axi_ar_bits_qos,
+  input  [3:0]  axi_ar_bits_region,
+  input  [4:0]  axi_ar_bits_id,
+  input         axi_ar_bits_user,
+  input         axi_r_ready,
+  output        axi_r_valid,
+  output [1:0]  axi_r_bits_resp,
+  output [63:0] axi_r_bits_data,
+  output        axi_r_bits_last,
+  output [4:0]  axi_r_bits_id,
+  output        axi_r_bits_user
+);
+
+  assign axi_b_bits_user = 1'b0;
+  assign axi_r_bits_user = 1'b0;
+
+  chandle channel;
+
+  initial begin
+    channel = memory_init();
+  end
+
+  reg __ar_valid;
+  reg [31:0] __ar_addr;
+  reg [31:0] __ar_id;
+  reg [31:0] __ar_size;
+  reg [31:0] __ar_len;
+
+  reg __aw_valid;
+  reg [31:0] __aw_addr;
+  reg [31:0] __aw_id;
+  reg [31:0] __aw_size;
+  reg [31:0] __aw_len;
+
+  reg __w_valid;
+  reg [31:0] __w_strb;
+  reg [63:0] __w_data;
+  reg        __w_last;
+
+  reg __r_ready;
+  reg __b_ready;
+
+  bit __ar_ready;
+  bit __aw_ready;
+  bit __w_ready;
+  bit __r_valid;
+  int __r_id;
+  int __r_resp;
+  longint __r_data;
+  bit __r_last;
+  bit __b_valid;
+  int __b_id;
+  int __b_resp;
+
+  reg __ar_ready_reg;
+  reg __aw_ready_reg;
+  reg __w_ready_reg;
+  reg __r_valid_reg;
+  reg [4:0] __r_id_reg;
+  reg [1:0] __r_resp_reg;
+  reg [63:0] __r_data_reg;
+  reg __r_last_reg;
+  reg __b_valid_reg;
+  reg [4:0] __b_id_reg;
+  reg [1:0] __b_resp_reg;
+
+  always @(posedge clock) begin
+    if (reset) begin
+      __ar_ready = 1'b0;
+      __aw_ready = 1'b0;
+      __w_ready = 1'b0;
+      __r_valid = 1'b0;
+      __b_valid = 1'b0;
+    end else begin
+      memory_tick(
+        channel,
+
+        __ar_valid,
+        __ar_ready,
+        __ar_addr,
+        __ar_id,
+        __ar_size,
+        __ar_len,
+
+        __aw_valid,
+        __aw_ready,
+        __aw_addr,
+        __aw_id,
+        __aw_size,
+        __aw_len,
+
+        __w_valid,
+        __w_ready,
+        __w_strb,
+        __w_data,
+        __w_last,
+
+        __r_valid,
+        __r_ready,
+        __r_id,
+        __r_resp,
+        __r_data,
+        __r_last,
+
+        __b_valid,
+        __b_ready,
+        __b_id,
+        __b_resp);
+    end
+  end
+
+  always @(negedge clock) begin
+    __ar_valid <= axi_ar_valid;
+    __ar_ready_reg <= __ar_ready;
+    __ar_addr <= axi_ar_bits_addr;
+    __ar_id <= {27'd0, axi_ar_bits_id};
+    __ar_size <= {29'd0, axi_ar_bits_size};
+    __ar_len <= {24'd0, axi_ar_bits_len};
+
+    __aw_valid <= axi_aw_valid;
+    __aw_ready_reg <= __aw_ready;
+    __aw_addr <= axi_aw_bits_addr;
+    __aw_id <= {27'd0, axi_aw_bits_id};
+    __aw_size <= {29'd0, axi_aw_bits_size};
+    __aw_len <= {24'd0, axi_aw_bits_len};
+
+    __w_valid <= axi_w_valid;
+    __w_ready_reg <= __w_ready;
+    __w_strb <= {24'd0, axi_w_bits_strb};
+    __w_data <= axi_w_bits_data;
+    __w_last <= axi_w_bits_last;
+
+    __r_valid_reg <= __r_valid;
+    __r_ready <= axi_r_ready;
+    __r_id_reg <= __r_id[4:0];
+    __r_resp_reg <= __r_resp[1:0];
+    __r_data_reg <= __r_data;
+    __r_last_reg <= __r_last;
+
+    __b_valid_reg <= __b_valid;
+    __b_ready <= axi_b_ready;
+    __b_id_reg <= __b_id[4:0];
+    __b_resp_reg <= __b_resp[1:0];
+  end
+
+  assign axi_ar_ready = __ar_ready_reg;
+  assign axi_aw_ready = __aw_ready_reg;
+  assign axi_w_ready = __w_ready_reg;
+  assign axi_r_valid = __r_valid_reg;
+  assign axi_r_bits_id = __r_id_reg;
+  assign axi_r_bits_resp = __r_resp_reg;
+  assign axi_r_bits_data = __r_data_reg;
+  assign axi_r_bits_last = __r_last_reg;
+  assign axi_b_valid = __b_valid_reg;
+  assign axi_b_bits_id = __b_id_reg;
+  assign axi_b_bits_resp = __b_resp_reg;
+
+endmodule
