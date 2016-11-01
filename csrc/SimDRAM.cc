@@ -11,7 +11,7 @@
 extern "C" void *memory_init(void)
 {
     mm_t *mm;
-    unsigned long size = 0x10000000L;
+    unsigned long size = MEM_SIZE;
 
 #ifdef DRAMSIM
     mm = (mm_t *) (new mm_dramsim2_t);
