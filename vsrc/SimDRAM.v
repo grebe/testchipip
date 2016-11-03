@@ -96,25 +96,25 @@ module SimDRAM (
     channel = memory_init();
   end
 
-  reg __ar_valid;
-  reg [31:0] __ar_addr;
-  reg [31:0] __ar_id;
-  reg [31:0] __ar_size;
-  reg [31:0] __ar_len;
+  wire __ar_valid;
+  wire [31:0] __ar_addr;
+  wire [31:0] __ar_id;
+  wire [31:0] __ar_size;
+  wire [31:0] __ar_len;
 
-  reg __aw_valid;
-  reg [31:0] __aw_addr;
-  reg [31:0] __aw_id;
-  reg [31:0] __aw_size;
-  reg [31:0] __aw_len;
+  wire __aw_valid;
+  wire [31:0] __aw_addr;
+  wire [31:0] __aw_id;
+  wire [31:0] __aw_size;
+  wire [31:0] __aw_len;
 
-  reg __w_valid;
-  reg [31:0] __w_strb;
-  reg [63:0] __w_data;
-  reg        __w_last;
+  wire __w_valid;
+  wire [31:0] __w_strb;
+  wire [63:0] __w_data;
+  wire        __w_last;
 
-  reg __r_ready;
-  reg __b_ready;
+  wire __r_ready;
+  wire __b_ready;
 
   bit __ar_ready;
   bit __aw_ready;
@@ -144,9 +144,15 @@ module SimDRAM (
     if (reset) begin
       __ar_ready = 1'b0;
       __aw_ready = 1'b0;
-      __w_ready = 1'b0;
-      __r_valid = 1'b0;
-      __b_valid = 1'b0;
+      __w_ready  = 1'b0;
+      __r_valid  = 1'b0;
+      __b_valid  = 1'b0;
+
+      __ar_ready_reg <= 1'b0;
+      __aw_ready_reg <= 1'b0;
+      __w_ready_reg  <= 1'b0;
+      __r_valid_reg  <= 1'b0;
+      __b_valid_reg  <= 1'b0;
     end else begin
       memory_tick(
         channel,
@@ -182,42 +188,42 @@ module SimDRAM (
         __b_ready,
         __b_id,
         __b_resp);
+
+        __ar_ready_reg <= __ar_ready;
+        __aw_ready_reg <= __aw_ready;
+        __w_ready_reg  <= __w_ready;
+
+        __r_valid_reg <= __r_valid;
+        __r_id_reg    <= __r_id[4:0];
+        __r_resp_reg  <= __r_resp[1:0];
+        __r_data_reg  <= __r_data;
+        __r_last_reg  <= __r_last;
+
+        __b_valid_reg <= __b_valid;
+        __b_id_reg    <= __b_id[4:0];
+        __b_resp_reg  <= __b_resp[1:0];
     end
   end
 
-  always @(negedge clock) begin
-    __ar_valid <= axi_ar_valid;
-    __ar_ready_reg <= __ar_ready;
-    __ar_addr <= axi_ar_bits_addr;
-    __ar_id <= {27'd0, axi_ar_bits_id};
-    __ar_size <= {29'd0, axi_ar_bits_size};
-    __ar_len <= {24'd0, axi_ar_bits_len};
+  assign __ar_valid = axi_ar_valid;
+  assign __ar_addr  = axi_ar_bits_addr;
+  assign __ar_id    = {27'd0, axi_ar_bits_id};
+  assign __ar_size  = {29'd0, axi_ar_bits_size};
+  assign __ar_len   = {24'd0, axi_ar_bits_len};
 
-    __aw_valid <= axi_aw_valid;
-    __aw_ready_reg <= __aw_ready;
-    __aw_addr <= axi_aw_bits_addr;
-    __aw_id <= {27'd0, axi_aw_bits_id};
-    __aw_size <= {29'd0, axi_aw_bits_size};
-    __aw_len <= {24'd0, axi_aw_bits_len};
+  assign __aw_valid = axi_aw_valid;
+  assign __aw_addr  = axi_aw_bits_addr;
+  assign __aw_id    = {27'd0, axi_aw_bits_id};
+  assign __aw_size  = {29'd0, axi_aw_bits_size};
+  assign __aw_len   = {24'd0, axi_aw_bits_len};
 
-    __w_valid <= axi_w_valid;
-    __w_ready_reg <= __w_ready;
-    __w_strb <= {24'd0, axi_w_bits_strb};
-    __w_data <= axi_w_bits_data;
-    __w_last <= axi_w_bits_last;
+  assign __w_valid = axi_w_valid;
+  assign __w_strb  = {24'd0, axi_w_bits_strb};
+  assign __w_data  = axi_w_bits_data;
+  assign __w_last  = axi_w_bits_last;
 
-    __r_valid_reg <= __r_valid;
-    __r_ready <= axi_r_ready;
-    __r_id_reg <= __r_id[4:0];
-    __r_resp_reg <= __r_resp[1:0];
-    __r_data_reg <= __r_data;
-    __r_last_reg <= __r_last;
-
-    __b_valid_reg <= __b_valid;
-    __b_ready <= axi_b_ready;
-    __b_id_reg <= __b_id[4:0];
-    __b_resp_reg <= __b_resp[1:0];
-  end
+  assign __r_ready = axi_r_ready;
+  assign __b_ready = axi_b_ready;
 
   assign axi_ar_ready = __ar_ready_reg;
   assign axi_aw_ready = __aw_ready_reg;
