@@ -71,8 +71,30 @@ class SCRBuilder(val devName: String) extends HasSCRParameters {
     controlInits += init
   }
 
+  def addControlT[T <: Data](gen: T, name: String, init: Option[T] = None) {
+    val width = gen.getWidth
+    val numRegisters = width / scrDataBits
+    val initBits = init.getOrElse(0.U).asUInt
+    for (i <- 0 until numRegisters) {
+      val partialName = s"${name}_$i"
+      if (init == null) {
+        addControl(partialName)
+      } else {
+        addControl(partialName, initBits(i * scrDataBits, (i+1) * scrDataBits))
+      }
+    }
+  }
+
   def addStatus(name: String) {
     statusNames += name
+  }
+
+  def addStatusT[T <: Data](gen : T, name: String) {
+    val width = gen.getWidth
+    val numRegisters = width / scrDataBits
+    for (i <- 0 until numRegisters) {
+      addStatus(s"${name}_$i")
+    }
   }
 
   def generate(start: BigInt, c: Clock = null, r: Bool = null)(implicit p: Parameters): SCRFile = {
