@@ -9,6 +9,8 @@ import scala.collection.mutable.HashMap
 
 trait HasSCRParameters {
   val scrDataBits = 64
+  def genNumRegisters[T <: Data](gen: T) =
+    gen.getWidth / scrDataBits
 }
 
 class SCRFile(
@@ -31,6 +33,24 @@ class SCRFile(
 
   def control(name: String) = io.control(controlMapping(name))
   def status(name: String) = io.status(statusMapping(name))
+
+  def controlT[T <: Data](gen: T, name: String) = {
+    val numRegisters = genNumRegisters(gen)
+    val controlWire = Wire(gen.cloneType)
+    val controlWireUInt = controlWire.asUInt
+    val controlVec = Vec(numRegisters, UInt(scrDataBits.W))
+    controlVec := controlVec.fromBits(controlWire.asUInt)
+    val controlHead = controlMapping(s"${name}_0")
+    (0 until numRegisters).foreach(i => io.control(controlHead + i) := controlVec(i))
+  }
+  def statusT[T <: Data](gen: T, name: String) = {
+    val statusWire = Wire(gen.cloneType)
+    val numRegisters = genNumRegisters(gen)
+    val statusHead = statusMapping(s"${name}_k0")
+    val statusRegs = Cat((0 until numRegisters).map(i => io.status(statusHead + i)))
+    statusWire := gen.fromBits(statusRegs)
+    statusWire
+  }
 
   require(controlInits.size == nControl)
   require(io.tl.tlDataBits == scrDataBits)
@@ -72,8 +92,7 @@ class SCRBuilder(val devName: String) extends HasSCRParameters {
   }
 
   def addControlT[T <: Data](gen: T, name: String, init: Option[T] = None) {
-    val width = gen.getWidth
-    val numRegisters = width / scrDataBits
+    val numRegisters = genNumRegisters(gen)
     val initBits = init.getOrElse(0.U).asUInt
     for (i <- 0 until numRegisters) {
       val partialName = s"${name}_$i"
@@ -90,8 +109,7 @@ class SCRBuilder(val devName: String) extends HasSCRParameters {
   }
 
   def addStatusT[T <: Data](gen : T, name: String) {
-    val width = gen.getWidth
-    val numRegisters = width / scrDataBits
+    val numRegisters = genNumRegisters(gen)
     for (i <- 0 until numRegisters) {
       addStatus(s"${name}_$i")
     }
