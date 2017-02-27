@@ -13,6 +13,7 @@ import rocketchip._
 import rocket.XLen
 import cde.{Parameters, Field}
 import _root_.util._
+import chisel3.core.ExplicitCompileOptions.NotStrict
 
 case object SerialInterfaceWidth extends Field[Int]
 
