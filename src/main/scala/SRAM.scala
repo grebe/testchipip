@@ -20,7 +20,8 @@ class MainSRAMBank(implicit p: Parameters) extends TLModule()(p) {
   val ren = state === s_read
   val rblock = Reg(UInt(tlBlockAddrBits.W))
   val (rbeat, rdone) = Counter(ren, tlDataBeats)
-  val rdata = mem.read(Cat(rblock, rbeat), ren)
+  val wen = io.acquire.fire() && io.acquire.bits.hasData()
+  val rdata = mem.read(Cat(rblock, rbeat), ren && !wen)
 
   val r_rbeat = Reg(next = rbeat)
   val r_ren = Reg(next = ren)
@@ -42,7 +43,6 @@ class MainSRAMBank(implicit p: Parameters) extends TLModule()(p) {
   val wdata = io.acquire.bits.data
   val wblock = io.acquire.bits.addr_block
   val wbeat = io.acquire.bits.addr_beat
-  val wen = io.acquire.fire() && io.acquire.bits.hasData()
 
   when (wen) { mem.write(Cat(wblock, wbeat), wdata) }
 
