@@ -17,13 +17,12 @@ class MainSRAMBank(implicit p: Parameters) extends TLModule()(p) {
   val nBlocks = p(NSRAMBlocksPerBank)
   val mem = SeqMem(nBlocks * tlDataBeats, UInt(tlDataBits.W))
 
-  val ren = state === s_read
-  val rblock = Reg(UInt(tlBlockAddrBits.W))
-  val (rbeat, rdone) = Counter(ren, tlDataBeats)
-  val rdata = mem.read(Cat(rblock, rbeat), ren)
+  val wdata = io.acquire.bits.data
+  val wblock = io.acquire.bits.addr_block
+  val wbeat = io.acquire.bits.addr_beat
+  val wen = io.acquire.fire() && io.acquire.bits.hasData()
 
-  val r_rbeat = Reg(next = rbeat)
-  val r_ren = Reg(next = ren)
+  when (wen) { mem.write(Cat(wblock, wbeat), wdata) }
 
   val buffer = Reg(Vec(tlDataBeats, UInt(tlDataBits.W)))
   val buffer_valid = Reg(init = 0.U(tlDataBeats.W))
@@ -34,17 +33,18 @@ class MainSRAMBank(implicit p: Parameters) extends TLModule()(p) {
   val multibeat_fire = multibeat_gnt && io.grant.fire()
   val (gnt_beat, gnt_done) = Counter(multibeat_fire, tlDataBeats)
 
+  val ren = state === s_read
+  val rblock = Reg(UInt(tlBlockAddrBits.W))
+  val (rbeat, rdone) = Counter(ren, tlDataBeats)
+  val rdata = mem.read(Cat(rblock, rbeat), ren && !wen)
+
+  val r_rbeat = Reg(next = rbeat)
+  val r_ren = Reg(next = ren)
+
   when (r_ren) { buffer(r_rbeat) := rdata }
   buffer_valid := (buffer_valid |
     Mux(r_ren, UIntToOH(r_rbeat), 0.U)) &
     ~Mux(multibeat_fire, UIntToOH(gnt_beat), 0.U)
-
-  val wdata = io.acquire.bits.data
-  val wblock = io.acquire.bits.addr_block
-  val wbeat = io.acquire.bits.addr_beat
-  val wen = io.acquire.fire() && io.acquire.bits.hasData()
-
-  when (wen) { mem.write(Cat(wblock, wbeat), wdata) }
 
   when (state === s_idle && io.acquire.valid) {
     val acq = io.acquire.bits
