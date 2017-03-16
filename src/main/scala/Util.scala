@@ -8,6 +8,7 @@ import chisel3._
 import chisel3.util._
 import uncore.tilelink._
 import cde.Parameters
+import chisel3.core.ExplicitCompileOptions.NotStrict
 
 class ResetSync(c: Clock, lat: Int = 2) extends Module(_clock = c) {
   val io = IO(new Bundle {
