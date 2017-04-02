@@ -40,7 +40,7 @@ class SCRFile(
 
   val acq = Queue(io.tl.acquire)
   val addr = Cat(acq.bits.addr_block, acq.bits.addr_beat)
-  val index = addr(log2Up(nControl+nStatus), 0)
+  val index = addr(log2Up(nControl+nStatus)-1, 0)
   val wen = acq.valid && acq.bits.hasData()
   val wdata = acq.bits.data
 
