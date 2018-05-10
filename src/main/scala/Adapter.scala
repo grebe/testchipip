@@ -28,7 +28,8 @@ object AdapterParams {
 }
 
 class SerialAdapter(implicit p: Parameters) extends TLModule()(p) {
-  val w = p(SerialInterfaceWidth)
+  //val w = p(SerialInterfaceWidth)
+  val w = 32
   val io = IO(new Bundle {
     val serial = new SerialIO(w)
     val mem = new ClientUncachedTileLinkIO
@@ -66,7 +67,11 @@ class SerialAdapter(implicit p: Parameters) extends TLModule()(p) {
 
   val wmask = FillInterleaved(w/8, bodyValid)
   val addr_size = nextAddr - addr
-  val len_size = Cat(len + 1.U, 0.U(log2Ceil(w/8).W))
+  val len_size = if (w > 8) {
+    Cat(len + 1.U, 0.U(log2Ceil(w/8).W))
+  } else {
+    len + 1.U
+  }
   val raw_size = Mux(len_size < addr_size, len_size, addr_size)
   val rsize = MuxLookup(raw_size, log2Ceil(tlDataBytes).U,
     (0 until log2Ceil(tlDataBytes)).map(i => ((1 << i).U -> i.U)))
@@ -96,7 +101,7 @@ class SerialAdapter(implicit p: Parameters) extends TLModule()(p) {
   def shiftBits(bits: UInt, idx: UInt): UInt =
     bits << Cat(idx, 0.U(log2Up(w).W))
 
-  def addrToIdx(addr: UInt): UInt =
+  def addrToIdx(addr: UInt): UInt = 
     addr(tlByteAddrBits - 1, log2Up(w/8))
 
 
@@ -206,10 +211,12 @@ trait PeripherySerialModule {
 
   val (master_idx, _) = outer.pBusMasters.range("serial")
 
+  val w = p(SerialInterfaceWidth)
   val adapter = Module(new SerialAdapter()(AdapterParams(p)))
   coreplexIO.slave(master_idx) <> adapter.io.mem
-  io.serial.out <> Queue(adapter.io.serial.out)
-  adapter.io.serial.in <> Queue(io.serial.in)
+  val serial_width_adjust = SerialWidthAdapter(adapter.io.serial, w)
+  io.serial.out <> Queue(serial_width_adjust.out)
+  serial_width_adjust.in <> Queue(io.serial.in)
 }
 
 trait NoDebug {
